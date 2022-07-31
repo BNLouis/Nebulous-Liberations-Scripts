@@ -207,7 +207,11 @@ local function liberate_panel(self, player_session)
     else
       local enemy = self:get_enemy_at(panel.x, panel.y, panel.z)
       if enemy then EnemyHelpers.face_position(enemy, player.x, player.y) end
-      if enemy and panel.custom_properties["Boss"] ~= nil and not enemy.is_engaged then
+      local isBoss = panel.custom_properties["Boss"] ~= nil
+      if isBoss and self.showdown_song then
+        Net.set_song(self.area_id, self.showdown_song)
+      end
+      if enemy and isBoss and not enemy.is_engaged then
         Async.await(enemy:do_first_encounter_banter(player.id))
         if enemy.is_engaged then
           Async.create_promise(function(resolve)
@@ -233,6 +237,7 @@ local function liberate_panel(self, player_session)
       else
         encounter_path = PanelEncounters[self.area_name]
       end
+      Net.set_song(self.area_id, self.area_song)
 
       local results = Async.await(player_session:initiate_encounter(encounter_path, data))
 
@@ -436,7 +441,9 @@ function Mission:new(base_area_id, new_area_id, players)
   local solo_target = tonumber(Net.get_area_custom_property(base_area_id, "Target Phase Count")) or 13
   local desired_players = tonumber(Net.get_area_custom_property(base_area_id, "Target Player Count")) or 3
   local minimum_phases = tonumber(Net.get_area_custom_property(base_area_id, "Minimum Target Phase Count")) or 1
-  local player_difference = #players-desired_players
+  local player_difference = #players - desired_players
+  local area_song = Net.get_area_custom_properties(base_area_id)["Song"]
+  local showdown_song = Net.get_area_custom_properties(base_area_id)["Showdown Song"]
   local mission = {
     area_id = new_area_id,
     area_name = Net.get_area_name(base_area_id),
@@ -450,6 +457,8 @@ function Mission:new(base_area_id, new_area_id, players)
     players = players,
     player_sessions = {},
     boss = nil,
+    area_song = area_song,
+    showdown_song = showdown_song,
     enemies = {},
     panels = {},
     dark_holes = {},
