@@ -1,6 +1,6 @@
 local ezmemory = require("scripts/ezlibs-scripts/ezmemory")
 local helpers = require('scripts/ezlibs-scripts/helpers')
-
+local ezencounters = require('scripts/ezlibs-scripts/ezencounters/main')
 -- private functions
 
 local function create_textbox_promise(self)
@@ -88,7 +88,7 @@ local function create_default_results()
 end
 
 -- all encounters to this player should be made through the session while the session is alive
-function Player:initiate_encounter(asset_path, data)
+function Player:initiate_encounter(asset_path, data, is_specific)
   if self.disconnected then
     return Async.create_promise(function(resolve)
       resolve(create_default_results())
@@ -98,8 +98,51 @@ function Player:initiate_encounter(asset_path, data)
   if self:is_battling() then
     error("This player is already in a battle")
   end
-  
-  Net.initiate_encounter(self.id, asset_path, data)
+  if not is_specific then
+    local encounter_info = ezencounters.pick_encounter_from_table(asset_path, data.terrain)
+    encounter_info.freedom_mission = {
+      turns=3,
+      can_flip=data.terrain=="surrounded"
+    }
+    if data.terrain=="advantage" then
+      encounter_info.teams = {
+        {2,2,2,2,1,1},
+        {2,2,2,2,1,1},
+        {2,2,2,2,1,1}
+      }
+    elseif data.terrain=="disadvantage" then
+      encounter_info.player_positions = {
+        {0,0,0,0,0,0},
+        {0,1,0,0,0,0},
+        {0,0,0,0,0,0}
+      }
+      encounter_info.teams = {
+        {2,2,1,1,1,1},
+        {2,2,1,1,1,1},
+        {2,2,1,1,1,1}
+      }
+    elseif data.terrain == "surrounded" then
+      encounter_info.player_positions = {
+        {0,0,0,0,0,0},
+        {0,0,1,0,0,0},
+        {0,0,0,0,0,0}
+      }
+      encounter_info.teams = {
+        {1,1,2,2,1,1},
+        {1,1,2,2,1,1},
+        {1,1,2,2,1,1}
+      }
+    else
+      encounter_info.teams = {
+        {2,2,2,1,1,1},
+        {2,2,2,1,1,1},
+        {2,2,2,1,1,1}
+      }
+    end
+    ezencounters.begin_encounter(self.id, encounter_info)
+  else
+    Net.initiate_encounter(self.id, asset_path, data)
+  end
 
   return Async.create_promise(function(resolve)
     self.resolve_battle = resolve

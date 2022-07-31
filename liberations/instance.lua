@@ -23,7 +23,7 @@ end
 local panel_type_table = {"Dark Panel", "Dark Hole", "Indestructible Panel", "Item Panel", "Panel Gate", "Bonus Panel", "Trap Panel"}
 local shadowstep_table = {"Dark Panel", "Item Panel", "Trap Panel"}
 
-debug = false
+debug = true
 
 -- private functions
 
@@ -181,7 +181,7 @@ local function liberate_panel(self, player_session)
         health = enemy.max_health -- spawn fully healed
       }
 
-      local results = Async.await(player_session:initiate_encounter(enemy.encounter, data))
+      local results = Async.await(player_session:initiate_encounter(enemy.encounter, data, true))
 
       if not results.success then
         player_session:complete_turn()
@@ -235,11 +235,11 @@ local function liberate_panel(self, player_session)
       elseif panel.custom_properties["Encounter Path"] then
         encounter_path = enemy.custom_properties["Encounter Path"]
       else
-        encounter_path = PanelEncounters[self.area_name]
+        encounter_path = require(PanelEncounters[self.area_name])
       end
       Net.set_song(self.area_id, self.area_song)
 
-      local results = Async.await(player_session:initiate_encounter(encounter_path, data))
+      local results = Async.await(player_session:initiate_encounter(encounter_path, data, enemy ~= nil))
 
       if not results.success then
         if enemy then
@@ -477,7 +477,8 @@ function Mission:new(base_area_id, new_area_id, players)
     needs_disposal = false,
     disposal_promise = nil,
     is_liberated = false,
-    honor_hp_mem = Net.get_area_custom_property(base_area_id, "Honor HPMem") == "true"
+    honor_hp_mem = Net.get_area_custom_property(base_area_id, "Honor HPMem") == "true",
+    honored_hp = Net.get_area_custom_property(base_area_id, "Forced Base HP") or 100
   }
   for i = 1, Net.get_layer_count(base_area_id), 1 do
     -- create a layer of panels
@@ -658,12 +659,12 @@ function Mission:begin()
   local slide_time = .7
   local total_camera_time = 0
   local start_health = 0
-  local hp = 0
+  local hp = self.honored_hp
   for _, player in ipairs(self.players) do
     -- create data
     self.player_sessions[player.id] = PlayerSession:new(self, player)
     if self.honor_hp_mem then
-      hp = ezmemory.get_player_max_health(player.id)
+      if ezmemory.get_player_max_health(player.id) ~= nil then hp = ezmemory.get_player_max_health(player.id) end
       ezmemory.set_player_max_health(player.id, hp, self.honor_hp_mem)
       ezmemory.set_player_health(player.id, 99999)
       start_health = ezmemory.get_player_health(player.id)

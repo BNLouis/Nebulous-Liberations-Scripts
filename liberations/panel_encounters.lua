@@ -46,8 +46,9 @@ end
 
 local areas = Net.list_areas()
 for i, area_id in next, areas do
-  local is_encounter = Net.get_area_custom_property(area_id, "Liberation Encounters")
-  if is_encounter ~= nil then
+  local is_encounter = 'assets/encounters/NebulousEncounters/'..area_id
+  local status, err = pcall(function () require(is_encounter) end)
+  if status == true then
     PanelEncounters[Net.get_area_name(area_id)] = is_encounter
   end
 end
