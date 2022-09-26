@@ -20,8 +20,9 @@ local function includes(table, value)
   return false
 end
 
-local panel_type_table = {"Dark Panel", "Dark Hole", "Indestructible Panel", "Item Panel", "Panel Gate", "Bonus Panel", "Trap Panel"}
-local shadowstep_table = {"Dark Panel", "Item Panel", "Trap Panel"}
+local panel_type_table = { "Dark Panel", "Dark Hole", "Indestructible Panel", "Item Panel", "Panel Gate", "Bonus Panel",
+  "Trap Panel" }
+local shadowstep_table = { "Dark Panel", "Item Panel", "Trap Panel" }
 
 debug = true
 
@@ -81,9 +82,9 @@ local function liberate(self)
   Net.set_song(self.area_id, Net.get_area_custom_properties(self.area_id)["Song"])
 
   local victory_message =
-    self.area_name .. " Liberated\n" ..
-    "Target: " .. self.target_phase .. "\n" ..
-    "Actual: " .. self.phase
+  self.area_name .. " Liberated\n" ..
+      "Target: " .. self.target_phase .. "\n" ..
+      "Actual: " .. self.phase
 
   for _, player in ipairs(self.players) do
     player:message(victory_message).and_then(function()
@@ -93,9 +94,9 @@ local function liberate(self)
 end
 
 local DARK_HOLE_SHAPE = {
-  {1, 1, 1},
-  {1, 1, 1},
-  {1, 1, 1},
+  { 1, 1, 1 },
+  { 1, 1, 1 },
+  { 1, 1, 1 },
 }
 
 -- expects execution in a coroutine
@@ -108,7 +109,7 @@ local function convert_indestructible_panels(self)
     if Net.get_area_custom_properties(self.area_id)["Victory Lap Song"] ~= nil then
       Net.set_song(self.area_id, Net.get_area_custom_properties(self.area_id)["Victory Lap Song"])
     end
-    player_session.player:message("No more DarkHoles! Nothing will save the Darkloids now!")
+    player_session.player:message("No more DarkHoles! Nothing will save Gospel now!")
 
     local player = player_session.player
 
@@ -175,13 +176,13 @@ local function liberate_panel(self, player_session)
         Async.await(player:message_with_mug("A Dark Hole! Begin liberation!"))
       end
 
-      local enemy = panel.enemy -- doesn't matter if they're dead, the encounter data is valid
       local data = {
         terrain = PanelEncounters.resolve_terrain(self, player),
-        health = enemy.max_health -- spawn fully healed
       }
+      encounter_path = require(PanelEncounters[self.area_name .. "darkhole"])
 
-      local results = Async.await(player_session:initiate_encounter(enemy.encounter, data, true))
+
+      local results = Async.await(player_session:initiate_encounter(encounter_path, data, false, true))
 
       if not results.success then
         player_session:complete_turn()
@@ -230,7 +231,7 @@ local function liberate_panel(self, player_session)
       }
       local encounter_path = nil
       if enemy then
-        encounter_path = enemy.encounter
+        encounter_path = require(PanelEncounters[self.area_name .. "darkhole"])
         data.health = enemy.health
       elseif panel.custom_properties["Encounter Path"] then
         encounter_path = enemy.custom_properties["Encounter Path"]
@@ -239,7 +240,7 @@ local function liberate_panel(self, player_session)
       end
       Net.set_song(self.area_id, self.area_song)
 
-      local results = Async.await(player_session:initiate_encounter(encounter_path, data, enemy ~= nil))
+      local results = Async.await(player_session:initiate_encounter(encounter_path, data, false))
 
       if not results.success then
         if enemy then
@@ -298,7 +299,8 @@ local function take_enemy_turn(self)
           if bossPointFound then
             Net.slide_player_camera(player.id, point.x + .5, point.y + .5, point.z, slide_time)
             Async.sleep(slide_time).and_then(function()
-              player:message_with_mug("Is this the power of "..self:get_panel_at(point.x, point.y, point.z).custom_properties["Boss"].."...?").and_then(function()
+              player:message_with_mug("Is this the power of " ..
+                self:get_panel_at(point.x, point.y, point.z).custom_properties["Boss"] .. "...?").and_then(function()
                 boot_player(player, false, self.area_name)
                 Net.unlock_player_camera(player.id)
                 Net.unlock_player_input(player.id)
@@ -363,10 +365,10 @@ local function take_enemy_turn(self)
 
         if panel then
           local can_move_to = (
-            panel.type == "Dark Panel" or
-            panel.type == "Item Panel" or
-            panel.type == "Trap Panel"
-          )
+              panel.type == "Dark Panel" or
+                  panel.type == "Item Panel" or
+                  panel.type == "Trap Panel"
+              )
           if can_move_to then table.insert(neighbors, panel) end
         end
       end
@@ -390,7 +392,7 @@ local function take_enemy_turn(self)
       local name = dark_hole.custom_properties.Spawns
       local direction = dark_hole.custom_properties.Direction
       dark_hole.enemy = Enemy.from(self, dark_hole, direction, name)
-      self.enemies[#self.enemies+1] = dark_hole.enemy
+      self.enemies[#self.enemies + 1] = dark_hole.enemy
 
       -- Let people admire the enemy
       local admire_time = .5
@@ -436,7 +438,8 @@ end
 local Mission = {}
 
 function Mission:new(base_area_id, new_area_id, players)
-  local FIRST_PANEL_GID = Net.get_tileset(base_area_id, Net.get_area_custom_property(base_area_id, "Liberation Tileset")).first_gid
+  local FIRST_PANEL_GID = Net.get_tileset(base_area_id, Net.get_area_custom_property(base_area_id, "Liberation Tileset"))
+      .first_gid
   local TOTAL_PANEL_GIDS = 1
   local solo_target = tonumber(Net.get_area_custom_property(base_area_id, "Target Phase Count")) or 13
   local desired_players = tonumber(Net.get_area_custom_property(base_area_id, "Target Player Count")) or 3
@@ -504,7 +507,7 @@ function Mission:new(base_area_id, new_area_id, players)
     --Find a way to detect if object is already added somehow. Shouldn't be an issue since instances, but...
     --Could be cleaner.
     if object.custom_properties.Compress or object.custom_properties.Decompress then
-      area_colliders[#area_colliders+1] = object
+      area_colliders[#area_colliders + 1] = object
     end
   end
 
@@ -520,10 +523,11 @@ function Mission:new(base_area_id, new_area_id, players)
     elseif is_panel(mission, object) then
       --Create the actual panel we'll be using with collisions
       local new_panel = {
-        name="", type=object.type, visible=true,
-        x=object.x, y=object.y, z=object.z, width=object.width, height=object.height,
-        data={type="tile", gid=Net.get_tileset(base_area_id, "/server/assets/tiles/Liberation Collision.tsx").first_gid},
-        custom_properties=object.custom_properties
+        name = "", type = object.type, visible = true,
+        x = object.x, y = object.y, z = object.z, width = object.width, height = object.height,
+        data = { type = "tile",
+          gid = Net.get_tileset(base_area_id, "/server/assets/tiles/Liberation Collision.tsx").first_gid },
+        custom_properties = object.custom_properties
       }
       if object.type == "Item Panel" then
         -- set the loot for the panel
@@ -558,7 +562,7 @@ function Mission:new(base_area_id, new_area_id, players)
           table.insert(mission.INDESTRUCTIBLE_PANEL_GID_LIST, object.data.gid)
           TOTAL_PANEL_GIDS = TOTAL_PANEL_GIDS + 1
         end
-        mission.indestructible_panels[#mission.indestructible_panels+1] = new_panel
+        mission.indestructible_panels[#mission.indestructible_panels + 1] = new_panel
       end
       if object.type == "Dark Panel" then
         if not includes(mission.BASIC_PANEL_GID_LIST, object.data.gid) then
@@ -580,7 +584,7 @@ function Mission:new(base_area_id, new_area_id, players)
           table.insert(mission.PANEL_GATE_GID_LIST, object.data.gid)
           TOTAL_PANEL_GIDS = TOTAL_PANEL_GIDS + 1
         end
-        mission.panel_gates[#mission.panel_gates+1] = new_panel
+        mission.panel_gates[#mission.panel_gates + 1] = new_panel
       end
       new_panel.id = Net.create_object(new_area_id, new_panel)
       new_panel.visual_object_id = object.id
@@ -731,7 +735,8 @@ function Mission:on_tick(elapsed)
             --Include a Z argument and fix layers. They're probably overlapping.
             --Konst says that this could lead to issues with a dark hole/panel/etc on a higher layer
             --not playing nice with one on a lower layer.
-            local object = self:get_panel_at(player_session.player.x + x, player_session.player.y + y, player_session.player.z)
+            local object = self:get_panel_at(player_session.player.x + x, player_session.player.y + y,
+              player_session.player.z)
             if object and includes(shadowstep_table, object.type) and not self:get_enemy_at(object.x, object.y, object.z) then
               local object_id = object.id
               table.insert(player_session.shadowsteps, object_id)
@@ -832,12 +837,12 @@ function Mission:handle_object_interaction(player_id, object_id, button)
   end
 
   local can_liberate = not panel_already_selected and (
-    panel.type == "Dark Panel" or
-    panel.type == "Item Panel" or
-    panel.type == "Dark Hole" or
-    panel.type == "Bonus Panel" or
-    panel.type == "Trap Panel"
-  )
+      panel.type == "Dark Panel" or
+          panel.type == "Item Panel" or
+          panel.type == "Dark Hole" or
+          panel.type == "Bonus Panel" or
+          panel.type == "Trap Panel"
+      )
 
   if not can_liberate then
     -- indestructible panels
@@ -862,25 +867,25 @@ function Mission:handle_object_interaction(player_id, object_id, button)
 
   for _, enemy in ipairs(self.enemies) do
     if (
-      math.min(panel.x) == enemy.x and
-      math.min(panel.y) == enemy.y and
-      enemy.z == panel.z
-   ) then
+        math.min(panel.x) == enemy.x and
+            math.min(panel.y) == enemy.y and
+            enemy.z == panel.z
+        ) then
       has_enemy = true
       break
     end
   end
 
   local can_use_ability = (
-    ability.question and -- no question = passive ability
-    not has_enemy and -- cant have an enemy standing on this tile
-    self.order_points >= ability.cost and
-    (
-      panel.type == "Dark Panel" or
-      panel.type == "Item Panel" or
-      panel.type == "Trap Panel"
-    )
-  )
+      ability.question and -- no question = passive ability
+          not has_enemy and -- cant have an enemy standing on this tile
+          self.order_points >= ability.cost and
+          (
+          panel.type == "Dark Panel" or
+              panel.type == "Item Panel" or
+              panel.type == "Trap Panel"
+          )
+      )
 
   if not can_use_ability then
     player_session.selection:select_panel(panel)
@@ -968,7 +973,8 @@ end
 
 function Mission:get_next_spawn_from_object(object_id)
   local object = Net.get_object_by_id(self.area_id, object_id)
-  if object.custom_properties["Next Spawn"] and Net.get_object_by_id(self.area_id, tonumber(object.custom_properties["Next Spawn"])).type == "Spawn Point" then
+  if object.custom_properties["Next Spawn"] and
+      Net.get_object_by_id(self.area_id, tonumber(object.custom_properties["Next Spawn"])).type == "Spawn Point" then
     return Net.get_object_by_id(self.area_id, tonumber(object.custom_properties["Next Spawn"]))
   end
   return self:get_spawn_position()

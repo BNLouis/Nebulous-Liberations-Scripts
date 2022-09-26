@@ -101,42 +101,42 @@ function Player:initiate_encounter(asset_path, data, is_specific)
   if not is_specific then
     local encounter_info = ezencounters.pick_encounter_from_table(asset_path, data.terrain)
     encounter_info.freedom_mission = {
-      turns=3,
-      can_flip=data.terrain=="surrounded"
+      turns = 3,
+      can_flip = data.terrain == "surrounded"
     }
-    if data.terrain=="advantage" then
+    if data.terrain == "advantage" then
       encounter_info.teams = {
-        {2,2,2,2,1,1},
-        {2,2,2,2,1,1},
-        {2,2,2,2,1,1}
+        { 2, 2, 2, 2, 1, 1 },
+        { 2, 2, 2, 2, 1, 1 },
+        { 2, 2, 2, 2, 1, 1 }
       }
-    elseif data.terrain=="disadvantage" then
+    elseif data.terrain == "disadvantage" then
       encounter_info.player_positions = {
-        {0,0,0,0,0,0},
-        {0,1,0,0,0,0},
-        {0,0,0,0,0,0}
+        { 0, 0, 0, 0, 0, 0 },
+        { 0, 1, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0 }
       }
       encounter_info.teams = {
-        {2,2,1,1,1,1},
-        {2,2,1,1,1,1},
-        {2,2,1,1,1,1}
+        { 2, 2, 1, 1, 1, 1 },
+        { 2, 2, 1, 1, 1, 1 },
+        { 2, 2, 1, 1, 1, 1 }
       }
     elseif data.terrain == "surrounded" then
       encounter_info.player_positions = {
-        {0,0,0,0,0,0},
-        {0,0,1,0,0,0},
-        {0,0,0,0,0,0}
+        { 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 1, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0 }
       }
       encounter_info.teams = {
-        {1,1,2,2,1,1},
-        {1,1,2,2,1,1},
-        {1,1,2,2,1,1}
+        { 1, 1, 2, 2, 1, 1 },
+        { 1, 1, 2, 2, 1, 1 },
+        { 1, 1, 2, 2, 1, 1 }
       }
     else
       encounter_info.teams = {
-        {2,2,2,1,1,1},
-        {2,2,2,1,1,1},
-        {2,2,2,1,1,1}
+        { 2, 2, 2, 1, 1, 1 },
+        { 2, 2, 2, 1, 1, 1 },
+        { 2, 2, 2, 1, 1, 1 }
       }
     end
     ezencounters.begin_encounter(self.id, encounter_info)
@@ -213,7 +213,7 @@ function Player:boot_to_lobby(isVictory, mapName)
     end
     if gate_to_remove ~= nil then
       local safe_secret = helpers.get_safe_player_secret(self.id)
-      local player_area_memory = ezmemory.get_player_area_memory(safe_secret,respawn_area)
+      local player_area_memory = ezmemory.get_player_area_memory(safe_secret, respawn_area)
       player_area_memory.hidden_objects[tostring(gate_to_remove.id)] = true
       ezmemory.save_player_memory(safe_secret)
     end

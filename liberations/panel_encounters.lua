@@ -10,7 +10,7 @@ local corner_offsets = {
 local function has_dark_panel(instance, x, y, z)
   local panel = instance:get_panel_at(x, y, z)
   if not panel then return false end
-  local panel_type_table = {"Dark Panel", "Dark Hole", "Indestructible Panel", "Item Panel", "Trap Panel"}
+  local panel_type_table = { "Dark Panel", "Dark Hole", "Indestructible Panel", "Item Panel", "Trap Panel" }
   function includes(table, value)
     for _, v in ipairs(table) do
       if value == v then
@@ -18,6 +18,7 @@ local function has_dark_panel(instance, x, y, z)
       end
     end
   end
+
   return includes(panel_type_table, panel.type)
 end
 
@@ -46,10 +47,18 @@ end
 
 local areas = Net.list_areas()
 for i, area_id in next, areas do
-  local is_encounter = 'assets/encounters/NebulousEncounters/'..area_id
-  local status, err = pcall(function () require(is_encounter) end)
+  --load basic encounters
+  local is_encounter = 'assets/encounters/NebulousEncounters/' .. area_id
+  local status, err = pcall(function() require(is_encounter) end)
   if status == true then
     PanelEncounters[Net.get_area_name(area_id)] = is_encounter
+  end
+  --load dark hole encounters
+  local is_encounter = 'assets/encounters/NebulousEncounters/' .. area_id .. "darkhole"
+  local status, err = pcall(function() require(is_encounter) end)
+  if status == true then
+    print("Loaded " .. is_encounter)
+    PanelEncounters[Net.get_area_name(area_id) .. "darkhole"] = is_encounter
   end
 end
 
